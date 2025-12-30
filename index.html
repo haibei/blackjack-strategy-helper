@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Strategy Helper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gradient-to-br from-green-900 via-green-800 to-green-700 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-white mb-2">🃏 Blackjack Strategy Helper</h1>
+            <p class="text-green-200 text-lg">Track cards, manage bets, and get optimal play recommendations</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="mb-6">
+            <div class="flex border-b border-white/20">
+                <button onclick="switchTab('home')" id="tab-home" class="tab-button active px-6 py-3 text-lg font-semibold text-white border-b-2 border-green-400 transition">
+                    🏠 Home
+                </button>
+                <button onclick="switchTab('history')" id="tab-history" class="tab-button px-6 py-3 text-lg font-semibold text-green-200 border-b-2 border-transparent hover:text-white transition">
+                    📜 History
+                </button>
+            </div>
+        </div>
+
+        <!-- Home Tab Content -->
+        <div id="tab-content-home" class="tab-content">
+        <!-- Main Game Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Left Column: Game Controls -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Game Statistics -->
+                <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
+                    <h2 class="text-2xl font-bold text-white mb-4">📊 Statistics</h2>
+                    <div class="grid grid-cols-3 gap-3 text-sm mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-green-200 text-xs">Games</span>
+                            <span id="gamesPlayed" class="text-white font-bold text-lg">0</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-green-200 text-xs">Wins</span>
+                            <span id="wins" class="text-white font-bold text-lg">0</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-green-200 text-xs">Losses</span>
+                            <span id="losses" class="text-white font-bold text-lg">0</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-green-200 text-xs">Pushes</span>
+                            <span id="pushes" class="text-white font-bold text-lg">0</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-green-200 text-xs">Win Rate</span>
+                            <span id="winRate" class="text-white font-bold text-lg">0%</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-green-200 text-xs">Profit</span>
+                            <span id="totalProfit" class="text-white font-bold text-lg">$0</span>
+                        </div>
+                    </div>
+                    <button onclick="resetStats()" class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition">Reset Stats (Saves to History)</button>
+                </div>
+
+                <!-- Dealer's Hand -->
+                <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
+                    <h2 class="text-2xl font-bold text-white mb-4">👔 Dealer's Hand</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <div id="dealerCards" class="flex flex-wrap gap-2 min-h-[120px] items-center">
+                            <div class="text-green-200 text-sm">Click cards to add</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-green-200 text-sm">Value</div>
+                            <div id="dealerValue" class="text-3xl font-bold text-white">0</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button onclick="addCard('dealer', 'A')" class="card-btn bg-red-600 hover:bg-red-700">A</button>
+                        <button onclick="addCard('dealer', '2')" class="card-btn">2</button>
+                        <button onclick="addCard('dealer', '3')" class="card-btn">3</button>
+                        <button onclick="addCard('dealer', '4')" class="card-btn">4</button>
+                        <button onclick="addCard('dealer', '5')" class="card-btn">5</button>
+                        <button onclick="addCard('dealer', '6')" class="card-btn">6</button>
+                        <button onclick="addCard('dealer', '7')" class="card-btn">7</button>
+                        <button onclick="addCard('dealer', '8')" class="card-btn">8</button>
+                        <button onclick="addCard('dealer', '9')" class="card-btn">9</button>
+                        <button onclick="addCard('dealer', '10')" class="card-btn">10</button>
+                        <button onclick="addCard('dealer', 'J')" class="card-btn">J</button>
+                        <button onclick="addCard('dealer', 'Q')" class="card-btn">Q</button>
+                        <button onclick="addCard('dealer', 'K')" class="card-btn">K</button>
+                        <button onclick="clearHand('dealer')" class="card-btn-clear bg-gray-600 hover:bg-gray-700">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Player's Hand -->
+                <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
+                    <h2 class="text-2xl font-bold text-white mb-4">👤 Player's Hand</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <div id="playerCards" class="flex flex-wrap gap-2 min-h-[120px] items-center">
+                            <div class="text-green-200 text-sm">Click cards to add</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-green-200 text-sm">Value</div>
+                            <div id="playerValue" class="text-3xl font-bold text-white">0</div>
+                        </div>
+                    </div>
+                    <div id="playerCardButtons" class="flex flex-wrap gap-2 mb-4">
+                        <button onclick="addCard('player', 'A')" class="card-btn bg-red-600 hover:bg-red-700">A</button>
+                        <button onclick="addCard('player', '2')" class="card-btn">2</button>
+                        <button onclick="addCard('player', '3')" class="card-btn">3</button>
+                        <button onclick="addCard('player', '4')" class="card-btn">4</button>
+                        <button onclick="addCard('player', '5')" class="card-btn">5</button>
+                        <button onclick="addCard('player', '6')" class="card-btn">6</button>
+                        <button onclick="addCard('player', '7')" class="card-btn">7</button>
+                        <button onclick="addCard('player', '8')" class="card-btn">8</button>
+                        <button onclick="addCard('player', '9')" class="card-btn">9</button>
+                        <button onclick="addCard('player', '10')" class="card-btn">10</button>
+                        <button onclick="addCard('player', 'J')" class="card-btn">J</button>
+                        <button onclick="addCard('player', 'Q')" class="card-btn">Q</button>
+                        <button onclick="addCard('player', 'K')" class="card-btn">K</button>
+                        <button onclick="clearHand('player')" class="card-btn-clear bg-gray-600 hover:bg-gray-700">Clear</button>
+                    </div>
+                    <div id="recordButtons" class="flex gap-2">
+                        <button onclick="recordWin()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition text-lg">✅ Record Win</button>
+                        <button onclick="recordPush()" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-semibold transition text-lg">🤝 Record Push</button>
+                        <button onclick="recordLoss()" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition text-lg">❌ Record Loss</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Strategy Recommendations -->
+            <div class="space-y-6">
+                <!-- Strategy Recommendation -->
+                <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-2xl border border-white/20">
+                    <h2 class="text-xl font-bold text-white mb-3">🎯 Strategy Recommendation</h2>
+                    <div id="strategyDisplay" class="text-center py-4">
+                        <div class="text-4xl mb-2">🎲</div>
+                        <div class="text-green-200 text-sm">Add cards to get recommendations</div>
+                    </div>
+                    <div id="strategyDetails" class="mt-2 text-sm text-green-200 space-y-2"></div>
+                </div>
+
+                <!-- Card Counting -->
+                <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
+                    <h2 class="text-2xl font-bold text-white mb-4">🔢 Card Counting</h2>
+                    <div class="space-y-3 text-sm mb-4">
+                        <div class="flex justify-between text-green-200">
+                            <span>Running Count (RC):</span>
+                            <span id="runningCount" class="text-white font-bold text-lg">0</span>
+                        </div>
+                        <div class="flex justify-between text-green-200">
+                            <span>Cards Dealt:</span>
+                            <span id="cardsDealt" class="text-white font-bold">0</span>
+                        </div>
+                        <div class="flex justify-between text-green-200">
+                            <span>Decks Remaining:</span>
+                            <span id="decksRemaining" class="text-white font-bold">8.0</span>
+                        </div>
+                        <div class="flex justify-between text-green-200">
+                            <span>True Count (TC):</span>
+                            <span id="trueCount" class="text-white font-bold text-xl">0.0</span>
+                        </div>
+                        <div class="pt-2 border-t border-white/20">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="text-green-200 text-xs">Suggested Bet:</div>
+                                <input type="checkbox" id="useSuggestedBet" class="w-4 h-4 rounded border-white/30 bg-white/20 text-green-600 focus:ring-green-500">
+                                <label for="useSuggestedBet" class="text-green-200 text-xs cursor-pointer">Use for profit</label>
+                            </div>
+                            <div id="suggestedBet" class="text-white font-bold text-lg">$1 (Minimum)</div>
+                            <div id="suggestedBetMessage" class="text-green-200 text-xs mt-1"></div>
+                        </div>
+                    </div>
+                    <button onclick="resetCardCount()" class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition">Reset Count</button>
+                </div>
+
+                <!-- Bet Management -->
+                <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
+                    <h2 class="text-2xl font-bold text-white mb-4">💰 Bet Management</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-green-200 text-sm font-semibold mb-2">Current Bet</label>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="adjustBet(-1)" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-lg text-sm font-bold transition whitespace-nowrap">-$1</button>
+                                <input type="number" id="currentBet" value="1" min="1" step="1" class="flex-1 bg-white/20 text-white text-center text-lg font-bold rounded-lg py-1.5 border border-white/30">
+                                <button onclick="adjustBet(1)" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1.5 rounded-lg text-sm font-bold transition whitespace-nowrap">+$1</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-green-200 text-sm font-semibold mb-2">Bankroll</label>
+                            <input type="number" id="bankroll" value="1000" min="0" step="10" class="w-full bg-white/20 text-white text-center text-lg font-bold rounded-lg py-1.5 border border-white/30">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
+                    <h2 class="text-2xl font-bold text-white mb-4">⚡ Quick Actions</h2>
+                    <div class="space-y-2">
+                        <button onclick="newHand()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition">New Hand</button>
+                        <button onclick="clearAll()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-semibold transition">Clear All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- History Tab Content -->
+        <div id="tab-content-history" class="tab-content hidden">
+            <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-white">📜 Statistics History</h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportStatsRecords()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold">Export</button>
+                        <label class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold cursor-pointer">
+                            Import
+                            <input type="file" accept=".json" onchange="if(this.files[0]) importStatsRecords(this.files[0])" style="display: none;">
+                        </label>
+                        <button onclick="clearAllStatsRecords()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold">Clear All</button>
+                    </div>
+                </div>
+                
+                <!-- Summary Section -->
+                <div id="historySummary" class="bg-white/5 rounded-lg p-4 border border-white/10 mb-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <div class="text-green-200 text-sm mb-1">Total Games</div>
+                            <div id="summaryTotalGames" class="text-white font-bold text-2xl">0</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-green-200 text-sm mb-1">Total Profit</div>
+                            <div id="summaryTotalProfit" class="text-white font-bold text-2xl">$0.00</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="statsHistory" class="text-green-200 text-sm text-center py-4">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,185 @@
+/* Custom styles for the blackjack app */
+
+.card-btn {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded-lg transition-colors;
+    font-size: 18px;
+    flex: 1 1 0;
+    min-width: 0;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.card-btn:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+    transform: scale(1.05);
+}
+
+.card-btn-clear {
+    @apply bg-gray-600 hover:bg-gray-700 text-white font-bold py-1.5 px-2 rounded-lg transition-colors;
+    font-size: 14px;
+    flex: 0 0 auto;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.card-btn-clear:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+}
+
+.card {
+    @apply bg-white text-black font-bold rounded-lg shadow-lg flex flex-col items-center justify-center;
+    width: 80px;
+    height: 110px;
+    position: relative;
+    border: 3px solid #1f2937;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    border-color: #3b82f6;
+}
+
+.card.red {
+    @apply text-red-600;
+    border-color: #dc2626;
+}
+
+.card.black {
+    @apply text-black;
+    border-color: #1f2937;
+}
+
+.card-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.card-remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.card-remove-btn:hover {
+    background: #dc2626;
+}
+
+/* Strategy recommendation animations */
+.strategy-hit {
+    @apply bg-green-500 text-white;
+    animation: pulse 2s infinite;
+}
+
+.strategy-stand {
+    @apply bg-yellow-500 text-white;
+    animation: pulse 2s infinite;
+}
+
+.strategy-double {
+    @apply bg-blue-500 text-white;
+    animation: pulse 2s infinite;
+}
+
+.strategy-split {
+    @apply bg-purple-500 text-white;
+    animation: pulse 2s infinite;
+}
+
+.strategy-surrender {
+    @apply bg-red-500 text-white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Glassmorphism effect */
+.glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Tab styles */
+.tab-button {
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+.tab-button.active {
+    color: white;
+    border-bottom-color: #4ade80 !important;
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.tab-content.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        width: 70px;
+        height: 95px;
+    }
+    
+    .card-value {
+        font-size: 28px;
+    }
+    
+    .card-btn {
+        font-size: 16px;
+        padding: 6px 8px;
+    }
+    
+    .card-btn-clear {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    .tab-button {
+        padding: 8px 12px;
+        font-size: 16px;
+    }
+}
+
