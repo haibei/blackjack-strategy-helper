@@ -411,22 +411,15 @@ export function updateCardCountingDisplay() {
  */
 export function updateStats() {
     document.getElementById('gamesPlayed').textContent = gameState.stats.gamesPlayed;
-    document.getElementById('wins').textContent = gameState.stats.wins;
-    document.getElementById('losses').textContent = gameState.stats.losses;
-    document.getElementById('pushes').textContent = gameState.stats.pushes || 0;
-    
-    const winRate = gameState.stats.gamesPlayed > 0 
-        ? ((gameState.stats.wins / gameState.stats.gamesPlayed) * 100).toFixed(1)
-        : 0;
-    document.getElementById('winRate').textContent = winRate + '%';
     
     const profit = gameState.stats.totalProfit >= 0 
         ? '$' + gameState.stats.totalProfit.toFixed(2)
         : '-$' + Math.abs(gameState.stats.totalProfit).toFixed(2);
-    document.getElementById('totalProfit').textContent = profit;
-    document.getElementById('totalProfit').className = gameState.stats.totalProfit >= 0 
-        ? 'text-white font-bold text-green-300' 
-        : 'text-white font-bold text-red-300';
+    const profitElement = document.getElementById('totalProfit');
+    profitElement.textContent = profit;
+    profitElement.className = gameState.stats.totalProfit >= 0 
+        ? 'text-white font-bold text-2xl text-green-300' 
+        : 'text-white font-bold text-2xl text-red-300';
 }
 
 // ============================================================================

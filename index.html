@@ -38,34 +38,20 @@
             <div class="lg:col-span-2 space-y-6">
                 <!-- Game Statistics -->
                 <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
-                    <h2 class="text-2xl font-bold text-white mb-4">📊 Statistics</h2>
-                    <div class="grid grid-cols-3 gap-3 text-sm mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-white">📊 Statistics</h2>
+                        <button onclick="resetStats()" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition">Reset Stats</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6 text-sm">
                         <div class="flex flex-col">
                             <span class="text-green-200 text-xs">Games</span>
-                            <span id="gamesPlayed" class="text-white font-bold text-lg">0</span>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-green-200 text-xs">Wins</span>
-                            <span id="wins" class="text-white font-bold text-lg">0</span>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-green-200 text-xs">Losses</span>
-                            <span id="losses" class="text-white font-bold text-lg">0</span>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-green-200 text-xs">Pushes</span>
-                            <span id="pushes" class="text-white font-bold text-lg">0</span>
-                        </div>
-                        <div class="flex flex-col">
-                            <span class="text-green-200 text-xs">Win Rate</span>
-                            <span id="winRate" class="text-white font-bold text-lg">0%</span>
+                            <span id="gamesPlayed" class="text-white font-bold text-2xl">0</span>
                         </div>
                         <div class="flex flex-col">
                             <span class="text-green-200 text-xs">Profit</span>
-                            <span id="totalProfit" class="text-white font-bold text-lg">$0</span>
+                            <span id="totalProfit" class="text-white font-bold text-2xl">$0</span>
                         </div>
                     </div>
-                    <button onclick="resetStats()" class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition">Reset Stats (Saves to History)</button>
                 </div>
 
                 <!-- Dealer's Hand -->
