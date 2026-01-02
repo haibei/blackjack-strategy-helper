@@ -39,7 +39,31 @@ The app uses basic blackjack strategy, which includes:
 - Pure HTML, CSS, and JavaScript (no build step required)
 - Uses Tailwind CSS via CDN for styling
 - LocalStorage for persistence
+- IndexedDB for statistics history
 - Responsive design that works on mobile and desktop
+
+## Testing
+
+The project includes comprehensive unit tests using Jest:
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+Test files are located in the `tests/` directory:
+- `strategy.test.js` - Tests for strategy recommendations and card counting adjustments
+- `card-counting.test.js` - Tests for card counting logic and True Count calculations
+- `statistics.test.js` - Tests for statistics and profit calculations
 
 ## Open the App
 

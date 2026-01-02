@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackjack Strategy Helper</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
+    <!-- Load module early in head -->
+    <script type="module" src="app-refactored.js"></script>
 </head>
 <body class="bg-gradient-to-br from-green-900 via-green-800 to-green-700 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
@@ -214,10 +217,10 @@
                     <h2 class="text-2xl font-bold text-white">📜 Statistics History</h2>
                     <div class="flex gap-2">
                         <button onclick="exportStatsRecords()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold">Export</button>
-                        <label class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold cursor-pointer">
-                            Import
-                            <input type="file" accept=".json" onchange="if(this.files[0]) importStatsRecords(this.files[0])" style="display: none;">
-                        </label>
+                            <label class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs font-semibold cursor-pointer">
+                                Import
+                                <input type="file" accept=".json" onchange="if(this.files[0]) importStatsRecordsAction(this.files[0])" style="display: none;">
+                            </label>
                         <button onclick="clearAllStatsRecords()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold">Clear All</button>
                     </div>
                 </div>
@@ -243,7 +246,6 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
 </body>
 </html>
 

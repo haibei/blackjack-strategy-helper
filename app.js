@@ -253,6 +253,27 @@ function getStrategyRecommendation(playerCards, dealerCard) {
     const canDouble = playerCards.length === 2;
     const canSplit = playerCards.length === 2 && playerCards[0] === playerCards[1];
     
+    // Insurance recommendation based on True Count
+    // Insurance is recommended when dealer shows Ace and True Count >= 3
+    if (dealerCard === 'A' && playerCards.length === 2) {
+        const trueCount = calculateTrueCount();
+        if (trueCount >= 3) {
+            return { 
+                action: 'insurance', 
+                message: 'BUY INSURANCE 🛡️', 
+                color: 'text-blue-400',
+                details: `True Count ${trueCount.toFixed(1)} >= 3: Insurance is profitable`
+            };
+        } else {
+            return { 
+                action: 'no-insurance', 
+                message: 'NO INSURANCE ❌', 
+                color: 'text-red-300',
+                details: `True Count ${trueCount.toFixed(1)} < 3: Insurance is not profitable`
+            };
+        }
+    }
+    
     // Blackjack!
     if (playerCards.length === 2 && playerValue === 21) {
         return { action: 'blackjack', message: 'BLACKJACK! 🎉', color: 'text-yellow-300' };
@@ -358,11 +379,40 @@ function getStrategyRecommendation(playerCards, dealerCard) {
         if (dealerValue >= 2 && dealerValue <= 6) {
             return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Stand on 16 vs 2-6' };
         }
+        // Card counting adjustment: Hard 16 vs 10, stand if TC >= 1
+        if (dealerValue === 10 && !isSoft) {
+            const trueCount = calculateTrueCount();
+            if (trueCount >= 1) {
+                return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 16 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 1)` };
+            }
+        }
         return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 16 vs 7-A' };
     }
     if (playerValue === 15) {
         if (dealerValue >= 2 && dealerValue <= 6) {
             return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Stand on 15 vs 2-6' };
+        }
+        // Card counting adjustments for Hard 15
+        if (!isSoft) {
+            const trueCount = calculateTrueCount();
+            // Hard 15 vs 10, stand if TC >= 4
+            if (dealerValue === 10) {
+                if (trueCount >= 4) {
+                    return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 15 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 4)` };
+                }
+            }
+            // Hard 15 vs 9, stand if TC >= 2
+            if (dealerValue === 9) {
+                if (trueCount >= 2) {
+                    return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 15 vs 9: Stand (TC ${trueCount.toFixed(1)} >= 2)` };
+                }
+            }
+            // Hard 15 vs A, stand if TC >= 1
+            if (dealerValue === 11) { // Ace is 11
+                if (trueCount >= 1) {
+                    return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 15 vs A: Stand (TC ${trueCount.toFixed(1)} >= 1)` };
+                }
+            }
         }
         return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 15 vs 7-A' };
     }
@@ -370,15 +420,63 @@ function getStrategyRecommendation(playerCards, dealerCard) {
         if (dealerValue >= 2 && dealerValue <= 6) {
             return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Stand on 14 vs 2-6' };
         }
+        // Card counting adjustment: Hard 14 vs 10, stand if TC >= 3
+        if (dealerValue === 10 && !isSoft) {
+            const trueCount = calculateTrueCount();
+            if (trueCount >= 3) {
+                return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 14 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 3)` };
+            }
+        }
         return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 14 vs 7-A' };
     }
     if (playerValue === 13) {
+        // Card counting adjustment: Hard 13 vs 2, stand if TC >= -1
+        if (dealerValue === 2 && !isSoft) {
+            const trueCount = calculateTrueCount();
+            if (trueCount >= -1) {
+                return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 13 vs 2: Stand (TC ${trueCount.toFixed(1)} >= -1)` };
+            }
+            return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 13 vs 2: Hit (TC ${trueCount.toFixed(1)} < -1)` };
+        }
         if (dealerValue >= 2 && dealerValue <= 6) {
             return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Stand on 13 vs 2-6' };
         }
         return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 13 vs 7-A' };
     }
     if (playerValue === 12) {
+        // Card counting adjustments for Hard 12
+        if (!isSoft) {
+            const trueCount = calculateTrueCount();
+            // Hard 12 vs 2/3, stand if TC >= 2
+            if (dealerValue === 2 || dealerValue === 3) {
+                if (trueCount >= 2) {
+                    return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 12 vs ${dealerValue}: Stand (TC ${trueCount.toFixed(1)} >= 2)` };
+                }
+                return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 12 vs ${dealerValue}: Hit (TC ${trueCount.toFixed(1)} < 2)` };
+            }
+            // Hard 12 vs 4, stand if TC >= 3 (otherwise hit)
+            if (dealerValue === 4) {
+                if (trueCount >= 3) {
+                    return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 12 vs 4: Stand (TC ${trueCount.toFixed(1)} >= 3)` };
+                }
+                return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 12 vs 4: Hit (TC ${trueCount.toFixed(1)} < 3)` };
+            }
+            // Hard 12 vs 5, stand if TC >= 1 (otherwise hit)
+            if (dealerValue === 5) {
+                if (trueCount >= 1) {
+                    return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 12 vs 5: Stand (TC ${trueCount.toFixed(1)} >= 1)` };
+                }
+                return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 12 vs 5: Hit (TC ${trueCount.toFixed(1)} < 1)` };
+            }
+            // Hard 12 vs 6, stand if TC >= -1 (otherwise hit)
+            if (dealerValue === 6) {
+                if (trueCount >= -1) {
+                    return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 12 vs 6: Stand (TC ${trueCount.toFixed(1)} >= -1)` };
+                }
+                return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 12 vs 6: Hit (TC ${trueCount.toFixed(1)} < -1)` };
+            }
+        }
+        // Basic strategy: Stand on 12 vs 4-6 (if not hard hand or no adjustments apply)
         if (dealerValue >= 4 && dealerValue <= 6) {
             return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Stand on 12 vs 4-6' };
         }
@@ -386,19 +484,60 @@ function getStrategyRecommendation(playerCards, dealerCard) {
     }
     if (playerValue === 11) {
         if (canDouble) {
+            // Card counting adjustment: Hard 11 vs A, double if TC >= 1 (otherwise hit)
+            if (dealerValue === 11 && !isSoft) { // Ace is 11
+                const trueCount = calculateTrueCount();
+                if (trueCount >= 1) {
+                    return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: `Hard 11 vs A: Double (TC ${trueCount.toFixed(1)} >= 1)` };
+                }
+                return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 11 vs A: Hit (TC ${trueCount.toFixed(1)} < 1)` };
+            }
+            // Basic strategy: Always double 11 vs other cards
             return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: 'Always double 11' };
         }
         return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 11 (can\'t double)' };
     }
     if (playerValue === 10) {
-        if (dealerValue >= 2 && dealerValue <= 9 && canDouble) {
-            return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: 'Double 10 vs 2-9' };
+        if (canDouble) {
+            // Card counting adjustments for Hard 10
+            if (!isSoft) {
+                const trueCount = calculateTrueCount();
+                // Hard 10 vs 10, double if TC >= 4
+                if (dealerValue === 10) {
+                    if (trueCount >= 4) {
+                        return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: `Hard 10 vs 10: Double (TC ${trueCount.toFixed(1)} >= 4)` };
+                    }
+                    return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 10 vs 10: Hit (TC ${trueCount.toFixed(1)} < 4)` };
+                }
+                // Hard 10 vs A, double if TC >= 4
+                if (dealerValue === 11) { // Ace is 11
+                    if (trueCount >= 4) {
+                        return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: `Hard 10 vs A: Double (TC ${trueCount.toFixed(1)} >= 4)` };
+                    }
+                    return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 10 vs A: Hit (TC ${trueCount.toFixed(1)} < 4)` };
+                }
+            }
+            // Basic strategy: Double 10 vs 2-9
+            if (dealerValue >= 2 && dealerValue <= 9) {
+                return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: 'Double 10 vs 2-9' };
+            }
         }
         return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 10' };
     }
     if (playerValue === 9) {
-        if (dealerValue >= 3 && dealerValue <= 6 && canDouble) {
-            return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: 'Double 9 vs 3-6' };
+        if (canDouble) {
+            // Card counting adjustment: Hard 9 vs 2, double if TC >= 1
+            if (dealerValue === 2 && !isSoft) {
+                const trueCount = calculateTrueCount();
+                if (trueCount >= 1) {
+                    return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: `Hard 9 vs 2: Double (TC ${trueCount.toFixed(1)} >= 1)` };
+                }
+                return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 9 vs 2: Hit (TC ${trueCount.toFixed(1)} < 1)` };
+            }
+            // Basic strategy: Double 9 vs 3-6
+            if (dealerValue >= 3 && dealerValue <= 6) {
+                return { action: 'double', message: 'DOUBLE', color: 'text-blue-300', details: 'Double 9 vs 3-6' };
+            }
         }
         return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 9' };
     }
@@ -1003,7 +1142,9 @@ function getActionEmoji(action) {
         'surrender': '🏳️',
         'blackjack': '🎉',
         'bust': '💥',
-        'wait': '🎲'
+        'wait': '🎲',
+        'insurance': '🛡️',
+        'no-insurance': '❌'
     };
     return emojis[action] || '🎲';
 }
