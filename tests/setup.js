@@ -43,8 +43,8 @@ document.body.innerHTML = `
   <div id="playerValue">0</div>
   <div id="strategyDisplay"></div>
   <div id="strategyDetails"></div>
-  <div id="currentBet" value="1">1</div>
-  <div id="bankroll" value="1000">1000</div>
+  <input type="number" id="currentBet" value="1" min="1" step="1">
+  <input type="number" id="bankroll" value="1000" min="0" step="10">
   <div id="runningCount">0</div>
   <div id="cardsDealt">0</div>
   <div id="decksRemaining">8.0</div>
@@ -52,10 +52,6 @@ document.body.innerHTML = `
   <div id="suggestedBet">$1</div>
   <div id="suggestedBetMessage"></div>
   <div id="gamesPlayed">0</div>
-  <div id="wins">0</div>
-  <div id="losses">0</div>
-  <div id="pushes">0</div>
-  <div id="winRate">0%</div>
   <div id="totalProfit">$0</div>
   <input type="checkbox" id="useSuggestedBet">
 `;
