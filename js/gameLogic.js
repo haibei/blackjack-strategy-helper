@@ -106,15 +106,9 @@ export function clearHand(gameState, hand) {
  * Split hand
  */
 export function splitHand(gameState, handIndex = null) {
+    // Only allow splitting the initial hand, not already-split hands (no 2nd level splits)
     if (handIndex !== null && gameState.isSplit) {
-        const hand = gameState.splitHands[handIndex];
-        if (hand && hand.length === 2 && hand[0] === hand[1] && gameState.splitHandResults[handIndex] === null) {
-            const card = hand[0];
-            gameState.splitHands[handIndex] = [card];
-            gameState.splitHands.push([card]);
-            gameState.splitHandResults.push(null);
-            gameState.splitHandDoubled.push(false);
-        }
+        // Second-level splits are not allowed
         return;
     }
     
@@ -215,6 +209,60 @@ export function recordLoss(gameState, getEffectiveBetFn) {
     gameState.dealerCards = [];
     gameState.playerCards = [];
     gameState.isDoubled = false;
+}
+
+/**
+ * Record surrender (cashout - lose half bet)
+ */
+export function recordSurrender(gameState, getEffectiveBetFn) {
+    if (gameState.isSplit) {
+        return;
+    }
+    
+    gameState.stats.gamesPlayed++;
+    gameState.stats.losses++;
+    
+    const effectiveBet = getEffectiveBetFn();
+    const loss = effectiveBet * 0.5; // Surrender loses half the bet
+    
+    gameState.stats.totalProfit -= loss;
+    gameState.bankroll -= loss;
+    if (gameState.bankroll < 0) gameState.bankroll = 0;
+    
+    gameState.dealerCards = [];
+    gameState.playerCards = [];
+    gameState.isDoubled = false;
+}
+
+/**
+ * Record surrender for a split hand (cashout - lose half bet)
+ */
+export function recordSplitSurrender(gameState, handIndex, getEffectiveBetFn) {
+    if (handIndex < 0 || handIndex >= gameState.splitHands.length) return;
+    if (gameState.splitHandResults[handIndex] !== null) return;
+    
+    gameState.splitHandResults[handIndex] = 'loss'; // Mark as loss for surrender
+    gameState.stats.losses++;
+    
+    const effectiveBet = getEffectiveBetFn();
+    const betMultiplier = gameState.splitHandDoubled[handIndex] ? 2 : 1;
+    const loss = effectiveBet * betMultiplier * 0.5; // Surrender loses half the bet
+    
+    gameState.stats.totalProfit -= loss;
+    gameState.bankroll -= loss;
+    if (gameState.bankroll < 0) gameState.bankroll = 0;
+    
+    // Check if all hands are finished
+    const allRecorded = gameState.splitHandResults.every(result => result !== null);
+    if (allRecorded) {
+        gameState.stats.gamesPlayed++;
+        gameState.dealerCards = [];
+        gameState.playerCards = [];
+        gameState.isSplit = false;
+        gameState.splitHands = [];
+        gameState.splitHandResults = [];
+        gameState.splitHandDoubled = [];
+    }
 }
 
 /**

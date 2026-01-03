@@ -5,7 +5,7 @@ import { createInitialGameState, resetGameState, resetStats as resetStatsState }
 import { calculateHandValue, isSoftHand } from './js/cardUtils.js';
 import { updateCardCount, calculateTrueCount, getSuggestedBet, resetCardCount } from './js/cardCounting.js';
 import { getStrategyRecommendation, getActionEmoji } from './js/strategy.js';
-import { addCard, removeCard, clearHand, splitHand, doubleDown, doubleDownSplit, recordWin, recordPush, recordLoss, recordSplitResult } from './js/gameLogic.js';
+import { addCard, removeCard, clearHand, splitHand, doubleDown, doubleDownSplit, recordWin, recordPush, recordLoss, recordSurrender, recordSplitResult, recordSplitSurrender } from './js/gameLogic.js';
 import { getEffectiveBet, adjustBet, setBet } from './js/betManagement.js';
 import { initDB, saveStatsRecord, getAllStatsRecords, deleteStatsRecord, clearAllStatsRecords, exportStatsRecords, importStatsRecords, getDatabaseStats } from './js/statistics.js';
 import { cardValues } from './js/constants.js';
@@ -168,18 +168,7 @@ function addSplitHandActionButtons(container, hand, handIndex) {
     const dealerCard = gameState.dealerCards.length > 0 ? gameState.dealerCards[0] : null;
     const strategy = getStrategyRecommendation(hand, dealerCard, gameState.cardCounting);
     
-    // Split button
-    if (hand.length === 2 && hand[0] === hand[1] && !gameState.splitHandResults[handIndex] && strategy.action === 'split') {
-        const splitButton = document.createElement('button');
-        splitButton.className = 'w-full bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs font-semibold mb-2';
-        splitButton.textContent = '✂️ Split Hand ' + (handIndex + 1);
-        splitButton.onclick = () => {
-            splitHand(gameState, handIndex);
-            updateDisplay();
-            saveState();
-        };
-        container.appendChild(splitButton);
-    }
+    // Split button removed - only allow splitting once (no 2nd level splits)
     
     // Double button
     if (hand.length === 2 && !gameState.splitHandDoubled[handIndex] && !gameState.splitHandResults[handIndex] && strategy.action === 'double') {
@@ -274,6 +263,24 @@ function updateSplitStrategyDisplay(strategyDisplay, dealerCard) {
             `;
         }
         
+        // Cash out button for split hands when surrender is recommended (2 or more cards)
+        if (strategy.action === 'surrender' && hand.length >= 2 && handResult === null) {
+            handHTML += `
+                <button onclick="recordSplitSurrender(${handIndex})" class="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg font-semibold transition text-sm">
+                    🏳️ Cash Out Hand ${handIndex + 1} (Surrender - Recommended)
+                </button>
+            `;
+        }
+        
+        // Manual cash out button for split hands (when not recommended but hand has 2+ cards)
+        if (strategy.action !== 'surrender' && hand.length >= 2 && handResult === null) {
+            handHTML += `
+                <button onclick="recordSplitSurrender(${handIndex})" class="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg font-semibold transition text-sm border-2 border-orange-400">
+                    🏳️ Cash Out Hand ${handIndex + 1} (Surrender - Manual)
+                </button>
+            `;
+        }
+        
         if (isDoubled) {
             handHTML += `
                 <div class="mt-2 p-2 bg-blue-500/20 border border-blue-400 rounded">
@@ -302,12 +309,34 @@ function updateSingleStrategyDisplay(strategyDisplay, strategyDetails, dealerCar
         <div class="text-2xl font-bold ${strategy.color || 'text-white'} mb-2">${strategy.message}</div>
     `;
     
-    if (strategy.action === 'split' && !gameState.isSplit && gameState.playerCards.length === 2 && gameState.playerCards[0] === gameState.playerCards[1]) {
+    // Show insurance recommendation if dealer shows Ace
+    if (strategy.insurance) {
         strategyHTML += `
-            <button onclick="splitHand()" class="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition text-sm">
-                ✂️ Split Hand
-            </button>
+            <div class="mt-3 p-2 bg-white/10 border border-white/20 rounded-lg">
+                <div class="text-sm font-semibold ${strategy.insurance.color} mb-1">${strategy.insurance.message}</div>
+                <div class="text-xs text-green-200">${strategy.insurance.details}</div>
+            </div>
         `;
+    }
+    
+    // Manual split button - available for any pair, regardless of strategy
+    const hasPair = gameState.playerCards.length === 2 && gameState.playerCards[0] === gameState.playerCards[1];
+    if (hasPair && !gameState.isSplit) {
+        if (strategy.action === 'split') {
+            // Strategy recommends split
+            strategyHTML += `
+                <button onclick="splitHand()" class="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition text-sm">
+                    ✂️ Split Hand (Recommended)
+                </button>
+            `;
+        } else {
+            // Strategy doesn't recommend split, but show manual split option
+            strategyHTML += `
+                <button onclick="splitHand()" class="mt-2 w-full bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg font-semibold transition text-sm border-2 border-purple-400">
+                    ✂️ Manual Split (Not Recommended)
+                </button>
+            `;
+        }
     }
     
     if (strategy.action === 'double' && !gameState.isDoubled && gameState.playerCards.length === 2) {
@@ -316,6 +345,25 @@ function updateSingleStrategyDisplay(strategyDisplay, strategyDetails, dealerCar
                 💰 Double Down
             </button>
         `;
+    }
+    
+    // Cash out button - always show when player has 2 or more cards
+    if (gameState.playerCards.length >= 2 && !gameState.isSplit) {
+        if (strategy.action === 'surrender') {
+            // Strategy recommends surrender
+            strategyHTML += `
+                <button onclick="recordSurrender()" class="mt-2 w-full bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg font-semibold transition text-sm">
+                    🏳️ Cash Out (Surrender - Recommended)
+                </button>
+            `;
+        } else {
+            // Strategy doesn't recommend surrender, but show manual cash out option
+            strategyHTML += `
+                <button onclick="recordSurrender()" class="mt-2 w-full bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg font-semibold transition text-sm border-2 border-orange-400">
+                    🏳️ Cash Out (Surrender - Manual)
+                </button>
+            `;
+        }
     }
     
     if (gameState.isDoubled) {
@@ -352,8 +400,38 @@ function updateBetDisplay() {
     
     const recordButtons = document.getElementById('recordButtons');
     if (recordButtons) {
-        recordButtons.style.display = gameState.isSplit ? 'none' : 'flex';
+        // Always show record buttons, including cash out/surrender
+        recordButtons.style.display = 'flex';
     }
+    
+    // Update manual action buttons visibility
+    updateManualActionButtons();
+}
+
+/**
+ * Update manual action buttons visibility
+ */
+function updateManualActionButtons() {
+    const manualSplitBtn = document.getElementById('manualSplitBtn');
+    const manualSurrenderBtn = document.getElementById('manualSurrenderBtn');
+    const manualSplitBtnTop = document.getElementById('manualSplitBtnTop');
+    
+    if (!manualSplitBtn || !manualSurrenderBtn) return;
+    
+    // Manual Split: Show when player has exactly 2 cards that are the same (pair) and not already split
+    const hasPair = !gameState.isSplit && 
+                    gameState.playerCards.length === 2 && 
+                    gameState.playerCards[0] === gameState.playerCards[1];
+    manualSplitBtn.style.display = hasPair ? 'block' : 'none';
+    
+    // Manual Split button in top right corner of player's hand
+    if (manualSplitBtnTop) {
+        manualSplitBtnTop.style.display = hasPair ? 'block' : 'none';
+    }
+    
+    // Manual Surrender: Show when player has exactly 2 cards and not already split
+    const canSurrender = !gameState.isSplit && gameState.playerCards.length === 2;
+    manualSurrenderBtn.style.display = canSurrender ? 'block' : 'none';
 }
 
 /**
@@ -552,6 +630,16 @@ export function recordLossAction() {
 window.recordLoss = recordLossAction;
 
 /**
+ * Record surrender (cashout)
+ */
+export function recordSurrenderAction() {
+    recordSurrender(gameState, () => getEffectiveBet(gameState, document.getElementById('useSuggestedBet')?.checked || false));
+    updateDisplay();
+    saveState();
+}
+window.recordSurrender = recordSurrenderAction;
+
+/**
  * Record split result (called from HTML)
  */
 export function recordSplitResultAction(handIndex, result) {
@@ -560,6 +648,16 @@ export function recordSplitResultAction(handIndex, result) {
     saveState();
 }
 window.recordSplitResult = recordSplitResultAction;
+
+/**
+ * Record split hand surrender (called from HTML)
+ */
+export function recordSplitSurrenderAction(handIndex) {
+    recordSplitSurrender(gameState, handIndex, () => getEffectiveBet(gameState, document.getElementById('useSuggestedBet')?.checked || false));
+    updateDisplay();
+    saveState();
+}
+window.recordSplitSurrender = recordSplitSurrenderAction;
 
 /**
  * Adjust bet

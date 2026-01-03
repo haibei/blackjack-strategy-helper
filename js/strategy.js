@@ -22,18 +22,19 @@ export function getStrategyRecommendation(playerCards, dealerCard, cardCounting)
     const canDouble = playerCards.length === 2;
     const canSplit = playerCards.length === 2 && playerCards[0] === playerCards[1];
     
-    // Insurance recommendation based on True Count
+    // Insurance recommendation based on True Count (when dealer shows Ace)
+    let insuranceRecommendation = null;
     if (dealerCard === 'A' && playerCards.length === 2) {
         const trueCount = calculateTrueCount(cardCounting);
         if (trueCount >= 3) {
-            return { 
+            insuranceRecommendation = { 
                 action: 'insurance', 
                 message: 'BUY INSURANCE 🛡️', 
                 color: 'text-blue-400',
                 details: `True Count ${trueCount.toFixed(1)} >= 3: Insurance is profitable`
             };
         } else {
-            return { 
+            insuranceRecommendation = { 
                 action: 'no-insurance', 
                 message: 'NO INSURANCE ❌', 
                 color: 'text-red-300',
@@ -44,7 +45,11 @@ export function getStrategyRecommendation(playerCards, dealerCard, cardCounting)
     
     // Blackjack!
     if (playerCards.length === 2 && playerValue === 21) {
-        return { action: 'blackjack', message: 'BLACKJACK! 🎉', color: 'text-yellow-300' };
+        const blackjackResult = { action: 'blackjack', message: 'BLACKJACK! 🎉', color: 'text-yellow-300' };
+        if (insuranceRecommendation) {
+            blackjackResult.insurance = insuranceRecommendation;
+        }
+        return blackjackResult;
     }
     
     // Bust
@@ -54,16 +59,31 @@ export function getStrategyRecommendation(playerCards, dealerCard, cardCounting)
     
     // Pair splitting strategy
     if (canSplit) {
-        return getPairSplittingStrategy(playerCards[0], dealerValue);
+        const splitStrategy = getPairSplittingStrategy(playerCards[0], dealerValue);
+        if (insuranceRecommendation) {
+            splitStrategy.insurance = insuranceRecommendation;
+        }
+        return splitStrategy;
     }
     
     // Soft hands (Ace counted as 11)
+    let basicStrategy;
     if (isSoft && playerCards.includes('A')) {
-        return getSoftHandStrategy(playerValue, dealerValue, canDouble);
+        basicStrategy = getSoftHandStrategy(playerValue, dealerValue, canDouble);
+    } else {
+        // Hard hands
+        basicStrategy = getHardHandStrategy(playerValue, dealerValue, isSoft, canDouble, cardCounting);
     }
     
-    // Hard hands
-    return getHardHandStrategy(playerValue, dealerValue, isSoft, canDouble, cardCounting);
+    // If we have an insurance recommendation, combine it with basic strategy
+    if (insuranceRecommendation) {
+        return {
+            ...basicStrategy,
+            insurance: insuranceRecommendation
+        };
+    }
+    
+    return basicStrategy;
 }
 
 /**
@@ -160,20 +180,79 @@ function getSoftHandStrategy(playerValue, dealerValue, canDouble) {
  */
 function getHardHandStrategy(playerValue, dealerValue, isSoft, canDouble, cardCounting) {
     if (playerValue >= 17) {
+        // Hard 17 vs A: Surrender (late surrender) - available with 2 or more cards
+        if (playerValue === 17 && dealerValue === 11 && !isSoft) {
+            return { action: 'surrender', message: 'SURRENDER 🏳️', color: 'text-orange-300', details: 'Surrender Hard 17 vs A' };
+        }
         return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Always stand on 17+' };
     }
     
     const trueCount = calculateTrueCount(cardCounting);
+    
+    // Surrender recommendations (check before other actions) - available with 2 or more cards
+    if (!isSoft) {
+        // Hard 16 vs 9: Surrender if TC < 0, otherwise stand if TC >= 5, otherwise hit
+        if (playerValue === 16 && dealerValue === 9) {
+            if (trueCount < 0) {
+                return { action: 'surrender', message: 'SURRENDER 🏳️', color: 'text-orange-300', details: `Hard 16 vs 9: Surrender (TC ${trueCount.toFixed(1)} < 0)` };
+            }
+            if (trueCount >= 5) {
+                return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 16 vs 9: Stand (TC ${trueCount.toFixed(1)} >= 5)` };
+            }
+            // TC >= 0 and < 5: Hit (basic strategy)
+            return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 16 vs 9: Hit (TC ${trueCount.toFixed(1)} < 5)` };
+        }
+        
+        // Hard 16 vs 10: Surrender if TC < 0, otherwise stand if TC >= 1
+        if (playerValue === 16 && dealerValue === 10) {
+            if (trueCount < 0) {
+                return { action: 'surrender', message: 'SURRENDER 🏳️', color: 'text-orange-300', details: `Hard 16 vs 10: Surrender (TC ${trueCount.toFixed(1)} < 0)` };
+            }
+            // TC >= 1 case is handled below
+        }
+        
+        // Hard 16 vs A: Surrender
+        if (playerValue === 16 && dealerValue === 11) {
+            return { action: 'surrender', message: 'SURRENDER 🏳️', color: 'text-orange-300', details: 'Surrender Hard 16 vs A' };
+        }
+        
+        // Hard 15 vs 10: Surrender if TC < 0, otherwise stand if TC >= 4
+        if (playerValue === 15 && dealerValue === 10) {
+            if (trueCount < 0) {
+                return { action: 'surrender', message: 'SURRENDER 🏳️', color: 'text-orange-300', details: `Hard 15 vs 10: Surrender (TC ${trueCount.toFixed(1)} < 0)` };
+            }
+            // TC >= 4 case is handled below
+        }
+        
+        // Hard 14 vs 10: Surrender if TC < -1
+        if (playerValue === 14 && dealerValue === 10) {
+            if (trueCount < -1) {
+                return { action: 'surrender', message: 'SURRENDER 🏳️', color: 'text-orange-300', details: `Hard 14 vs 10: Surrender (TC ${trueCount.toFixed(1)} < -1)` };
+            }
+        }
+    }
     
     // Hard 16
     if (playerValue === 16) {
         if (dealerValue >= 2 && dealerValue <= 6) {
             return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Stand on 16 vs 2-6' };
         }
-        if (dealerValue === 10 && !isSoft && trueCount >= 1) {
-            return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 16 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 1)` };
+        if (dealerValue === 9) {
+            // Already handled in surrender section above - should not reach here
+            return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 16 vs 9' };
         }
-        return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 16 vs 7-A' };
+        if (dealerValue === 10 && !isSoft) {
+            if (trueCount >= 1) {
+                return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 16 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 1)` };
+            }
+            // TC < 1 but >= 0: Hit (basic strategy, surrender already handled if TC < 0)
+            return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 16 vs 10: Hit (TC ${trueCount.toFixed(1)} < 1)` };
+        }
+        if (dealerValue === 11) {
+            // Already handled in surrender section above (Hard 16 vs A always surrender)
+            return { action: 'surrender', message: 'SURRENDER 🏳️', color: 'text-orange-300', details: 'Surrender Hard 16 vs A' };
+        }
+        return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 16 vs 7-8' };
     }
     
     // Hard 15
@@ -182,8 +261,12 @@ function getHardHandStrategy(playerValue, dealerValue, isSoft, canDouble, cardCo
             return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Stand on 15 vs 2-6' };
         }
         if (!isSoft) {
-            if (dealerValue === 10 && trueCount >= 4) {
-                return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 15 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 4)` };
+            if (dealerValue === 10) {
+                if (trueCount >= 4) {
+                    return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 15 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 4)` };
+                }
+                // TC < 4 but >= 0: Hit (basic strategy, surrender already handled if TC < 0)
+                return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 15 vs 10: Hit (TC ${trueCount.toFixed(1)} < 4)` };
             }
             if (dealerValue === 9 && trueCount >= 2) {
                 return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 15 vs 9: Stand (TC ${trueCount.toFixed(1)} >= 2)` };
@@ -200,10 +283,14 @@ function getHardHandStrategy(playerValue, dealerValue, isSoft, canDouble, cardCo
         if (dealerValue >= 2 && dealerValue <= 6) {
             return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: 'Stand on 14 vs 2-6' };
         }
-        if (dealerValue === 10 && !isSoft && trueCount >= 3) {
-            return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 14 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 3)` };
+        if (dealerValue === 10 && !isSoft) {
+            if (trueCount >= 3) {
+                return { action: 'stand', message: 'STAND', color: 'text-yellow-300', details: `Hard 14 vs 10: Stand (TC ${trueCount.toFixed(1)} >= 3)` };
+            }
+            // TC < 3 but >= -1: Hit (basic strategy, surrender already handled if TC < -1)
+            return { action: 'hit', message: 'HIT', color: 'text-green-300', details: `Hard 14 vs 10: Hit (TC ${trueCount.toFixed(1)} < 3)` };
         }
-        return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 14 vs 7-A' };
+        return { action: 'hit', message: 'HIT', color: 'text-green-300', details: 'Hit 14 vs 7-9, A' };
     }
     
     // Hard 13

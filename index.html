@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
     <!-- Load module early in head -->
-    <script type="module" src="app-refactored.js"></script>
+    <script type="module" src="app-refactored.js?v=2"></script>
 </head>
 <body class="bg-gradient-to-br from-green-900 via-green-800 to-green-700 min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
@@ -86,7 +86,10 @@
 
                 <!-- Player's Hand -->
                 <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-2xl border border-white/20">
-                    <h2 class="text-2xl font-bold text-white mb-4">👤 Player's Hand</h2>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold text-white">👤 Player's Hand</h2>
+                        <button id="manualSplitBtnTop" onclick="splitHand()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition text-sm" style="display: none;">✂️ Split</button>
+                    </div>
                     <div class="flex items-center justify-between mb-4">
                         <div id="playerCards" class="flex flex-wrap gap-2 min-h-[120px] items-center">
                             <div class="text-green-200 text-sm">Click cards to add</div>
@@ -116,6 +119,7 @@
                         <button onclick="recordWin()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold transition text-lg">✅ Record Win</button>
                         <button onclick="recordPush()" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-semibold transition text-lg">🤝 Record Push</button>
                         <button onclick="recordLoss()" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition text-lg">❌ Record Loss</button>
+                        <button onclick="recordSurrender()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-semibold transition text-lg">🏳️ Cash Out</button>
                     </div>
                 </div>
             </div>
